@@ -1,0 +1,56 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build output
+dist/
+build/
+.out/
+.next/
+.vercel/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+*.log.*
+debug.log
+
+# Cache
+.cache/
+.vite/
+.next/
+.svelte-kit/
+storybook-static/
+
+# VS Code / extension backup files
+_*.js
+_*.jsx
+_*.ts
+_*.tsx
+_*.css
+_*.json
+_*.md
+_*.html
+
+# Editor / OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+coverage/
+tmp/
+

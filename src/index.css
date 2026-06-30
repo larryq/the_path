@@ -1,0 +1,39 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Raleway:wght@300;400;500&display=swap");
+@import "tailwindcss";
+
+:root {
+  --color-forest-deep: #1a2e1f;
+  --color-forest-mid: #2a4a35;
+  --color-forest-light: #3d6b4a;
+  --color-tile-base: #a8d8c8;
+  --color-tile-hover: #c8ead8;
+  --color-tile-path: #f0d080;
+  --color-tile-adjacent: #d4a8e0;
+  --color-tile-selected: #90c8a0;
+  --color-ground: #2a3a35;
+  --color-text-light: #e8f4e8;
+  --color-text-dim: #8aab8a;
+  --color-accent: #7ecba1;
+  --color-accent-warm: #d4956a;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-forest-deep);
+}
+
+/* Prevent text selection during drag */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
