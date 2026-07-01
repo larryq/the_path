@@ -17,7 +17,7 @@ export default function PathRibbon({ geometry }: PathRibbonProps) {
       uGrainScale: { value: 2.2 }, // fine grain frequency
       uDirtColorLight: { value: new THREE.Color("#a9844f") },
       uDirtColorDark: { value: new THREE.Color("#6e4f2c") },
-      uPebbleColor: { value: new THREE.Color("#8a8070") },
+      uPebbleColor: { value: new THREE.Color("#568c5a") },
       uLightDirection: { value: new THREE.Vector3(0.5, 1.0, 0.3).normalize() },
       uLightColor: { value: new THREE.Color("#fff4e6") },
       uAmbientColor: { value: new THREE.Color("#3a3228") },

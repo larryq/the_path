@@ -14,7 +14,7 @@ function RedFlowersModel({
   rotation = [0, 0, 0],
   randomRotation = true,
 }: RedFlowersProps) {
-  const { scene } = useGLTF("/models/red_flowers_fixed.glb");
+  const { scene } = useGLTF("/models/red_flowers_fixed1.glb");
   const randomY = useRef(randomRotation ? Math.random() * Math.PI * 2 : 0);
 
   const finalRotation: [number, number, number] = [
@@ -37,4 +37,4 @@ export default function RedFlowers(props: RedFlowersProps) {
   );
 }
 
-useGLTF.preload("/models/red_flowers_fixed.glb");
+useGLTF.preload("/models/red_flowers_fixed1.glb");

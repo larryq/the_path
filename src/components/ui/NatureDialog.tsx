@@ -54,7 +54,7 @@ export default function NatureDialog() {
               fontFamily: "'Raleway', sans-serif",
             }}
           >
-            Choose Nature
+            Choose Nature Item for Tile
           </div>
           <button
             onClick={closeDialog}

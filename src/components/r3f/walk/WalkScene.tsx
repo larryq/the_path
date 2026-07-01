@@ -10,6 +10,9 @@ import { axialToWorld } from "../../../config/grid.config";
 import NatureItemFactory from "../nature/NatureItemFactory";
 import PathRibbon from "./PathRibbon";
 import PathRibbon1 from "./PathRibbon1";
+import Birds from "../environment/Birds";
+import Clouds from "../environment/Clouds";
+import Hills from "../environment/Hills";
 
 export default function WalkScene() {
   const path = useGridStore((s) => s.path);
@@ -235,6 +238,9 @@ export default function WalkScene() {
       <Suspense fallback={null}>
         <PathRibbon1 geometry={ribbonGeometry} />
       </Suspense>
+      <Birds />
+      <Clouds />
+      <Hills />
     </>
   );
 }

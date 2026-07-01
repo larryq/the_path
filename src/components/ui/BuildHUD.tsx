@@ -42,8 +42,8 @@ export default function BuildHUD() {
     : "Welcome! Click and hold on a tile, then drag a path you would like to walk along. When done release the mouse button. If you don't like the path just hit the reset button at the bottom.";
 
   const pathMessage = isMobile
-    ? "Now tap each of the pink tiles and choose what sort of nature you'd like to put there. If you want to fill in the rest with random ones, you can do that at the bottom of the selection dialog."
-    : "Now click each of the pink tiles and choose what sort of nature you'd like to put there. If you want to fill in the rest with random ones, you can do that at the bottom of the selection dialog.";
+    ? "Tap each pink tile and choose what sort of nature you'd like there. To fill in the rest randomly, use the button at the bottom of the selection dialog.\nWhen done, press the 'Begin Walk' button to start."
+    : "Click each pink tile and choose what sort of nature you'd like there. To fill in the rest randomly, use the button at the bottom of the selection dialog.\nWhen done, press the 'Begin Walk' button to start.";
 
   let hudState: "idle" | "dragging" | "placing" = "idle";
   if (isDragging) hudState = "dragging";
@@ -147,7 +147,7 @@ export default function BuildHUD() {
 
       {/* Bottom bar */}
       {canWalk && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 pointer-events-auto">
+        <div className="text-lg absolute bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-4 pointer-events-auto">
           <GhostButton onClick={resetGrid}>↺ Reset</GhostButton>
           <PrimaryButton onClick={startWalk}>Done — Begin Walk →</PrimaryButton>
         </div>
@@ -165,7 +165,7 @@ function HintCard({
 }) {
   return (
     <div
-      className="flex flex-col items-start gap-1 p-4 max-w-[200px]"
+      className="flex flex-col items-start gap-1 p-4 max-w-[300px]"
       style={{
         background: "rgba(13,31,21,0.88)",
         border: `1px solid ${accent ? "rgba(240,208,128,0.3)" : "rgba(126,203,161,0.15)"}`,
@@ -193,7 +193,7 @@ function PrimaryButton({
   return (
     <button
       onClick={onClick}
-      className="px-6 py-3 text-xs tracking-[0.25em] uppercase"
+      className="px-8 py-4 text-lg tracking-[0.25em] uppercase"
       style={{
         fontFamily: "'Raleway', sans-serif",
         fontWeight: 500,
@@ -220,7 +220,7 @@ function GhostButton({
   return (
     <button
       onClick={onClick}
-      className="px-6 py-3 text-xs tracking-[0.25em] uppercase"
+      className="px-8 py-4 tracking-[0.25em] uppercase"
       style={{
         fontFamily: "'Raleway', sans-serif",
         fontWeight: 500,

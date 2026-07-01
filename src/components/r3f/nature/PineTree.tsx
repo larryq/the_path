@@ -37,4 +37,4 @@ export default function PineTree(props: PineTreeProps) {
   );
 }
 
-useGLTF.preload("/models/yellow_flowers_fixed.glb");
+useGLTF.preload("/models/pine_tree_fixed.glb");

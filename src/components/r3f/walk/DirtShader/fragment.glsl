@@ -56,8 +56,9 @@ void main() {
   float grainNoise = fbm(vWorldPosition.xz * uGrainScale);
   grainNoise = saturateVal(grainNoise * 0.5 + 0.5);
 
-  float pebbleMask = smoothstep(0.62, 0.78, grainNoise);
-  baseColor = mix(baseColor, uPebbleColor, pebbleMask * 0.35);
+float sharpGrain = pow(saturateVal(grainNoise), 5.0);
+  float pebbleMask = smoothstep(0.12, 0.30, sharpGrain);
+  baseColor = mix(baseColor, uPebbleColor, pebbleMask * 0.65);
 
   // Subtle additional speckle for grittiness
   float speckle = fbm(vWorldPosition.xz * uGrainScale * 3.3 + 17.0);

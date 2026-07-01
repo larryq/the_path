@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { WALK_CONFIG } from "../../../config/walk.config";
 import { usePathSpline } from "../../../hooks/usePathSpline";
@@ -16,6 +16,7 @@ export default function WalkCamera() {
   const mouseDeltaX = useRef(0);
   const mouseDeltaY = useRef(0);
   const keys = useRef({ w: false, s: false, a: false, d: false });
+  const { camera } = useThree();
 
   // Reusable vectors — allocated once, reused every frame to avoid GC pressure
   const moveDirection = useRef(new THREE.Vector3());
@@ -31,6 +32,7 @@ export default function WalkCamera() {
 
     // Position camera at eye height above path start
     const pos = startPosition.clone().setY(WALK_CONFIG.cameraHeight);
+    camera.position.copy(pos);
 
     // Build base quaternion pointing down the path
     const lookTarget = startPosition
@@ -43,7 +45,7 @@ export default function WalkCamera() {
     // Reset offsets so we start fresh
     yawOffset.current = 0;
     pitchOffset.current = 0;
-  }, [startPosition, startDirection, pathCurve]);
+  }, [startPosition, startDirection, pathCurve, camera]);
 
   // ── Input listeners ───────────────────────────────────────────────────────
   useEffect(() => {

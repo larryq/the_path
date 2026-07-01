@@ -1,5 +1,5 @@
 // src/components/r3f/nature/NatureItemFactory.tsx
-
+//water fountain at https://poly.pizza/m/2guUSHGDPZ
 import { Suspense } from "react";
 import { Bush } from "../environment/Bush";
 import BerryBush from "./BerryBush";
@@ -12,6 +12,9 @@ import YellowFlowers from "./YellowFlowers";
 import RedFlowers from "./RedFlowers";
 import WillowTree from "./WillowTree";
 import PineTree from "./PineTree";
+import FernPlant from "./FernPlant";
+import Fountain from "./Fountain";
+import GreenFlowers from "./GreenFlowers";
 
 interface NatureItemFactoryProps {
   itemId: string;
@@ -143,7 +146,7 @@ export default function NatureItemFactory({
         </Suspense>
       );
     case "pine":
-      return <PineTree position={position} scale={0.3} />;
+      return <PineTree position={position} scale={0.5} />;
     case "deciduous":
     case "willow":
       return <WillowTree position={position} scale={0.3} />;
@@ -153,13 +156,17 @@ export default function NatureItemFactory({
     case "flowers_blue":
       return <PurpleFlowers position={position} />;
     case "flowers_green":
-      return <FlowerPlaceholder position={position} color="#40c840" />;
+      return (
+        <Suspense fallback={null}>
+          <GreenFlowers position={position} scale={0.29} />
+        </Suspense>
+      );
     case "flowers_yellow":
       return <YellowFlowers position={position} scale={0.5} />;
     case "ferns":
-      return <FernPlaceholder position={position} />;
+      return <FernPlant position={position} />;
     case "mushrooms":
-      return <Mushrooms position={position} />;
+      return <Mushrooms position={[position[0], position[1], position[2]]} />;
     case "hay_bale":
       return (
         <HayBale position={position} scale={0.25} rotation={[0.0, 0.8, 0.0]} />
@@ -167,7 +174,7 @@ export default function NatureItemFactory({
     case "boulders":
       return <Boulder position={position} scale={1.25} />;
     case "brook":
-      return <BrookPlaceholder position={position} />;
+      return <Fountain position={position} scale={0.5} />;
     case "vine":
       return <Vine1 position={position} scale={0.5} />;
 
