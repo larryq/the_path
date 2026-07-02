@@ -4,18 +4,129 @@ import { usePathSpline } from "../../../hooks/usePathSpline";
 import { useGridStore } from "../../../stores/useGridStore";
 import * as THREE from "three";
 import Grass from "../environment/Grass";
-import { Bush } from "../environment/Bush";
+
 import GroundPlane from "../environment/GroundPlane";
-import { axialToWorld } from "../../../config/grid.config";
+
 import NatureItemFactory from "../nature/NatureItemFactory";
-import PathRibbon from "./PathRibbon";
+
 import PathRibbon1 from "./PathRibbon1";
 import Birds from "../environment/Birds";
 import Clouds from "../environment/Clouds";
 import Hills from "../environment/Hills";
 
+import { NATURE_ITEMS } from "../../../config/natureItems.config";
+import {
+  indexToAxial,
+  axialToWorld,
+  GRID_CONFIG,
+} from "../../../config/grid.config";
+import { seededRandom } from "../../../utils/seededRandom";
+
+const DISTANT_TREES = [
+  {
+    id: "distant_tree_1",
+    label: "distant tree 1",
+    emoji: "🌲",
+    description: "A tree used for distant background elements.",
+    component: "",
+    props: {},
+    windAffected: true,
+    windNode: "pine_leaves",
+    groundOffset: 0,
+    category: "tree",
+  },
+  {
+    id: "distant_tree_2",
+    label: "distant tree 2",
+    emoji: "🌲",
+    description: "A tree used for distant background elements.",
+    component: "",
+    props: {},
+    windAffected: true,
+    windNode: "pine_leaves",
+    groundOffset: 0,
+    category: "tree",
+  },
+  {
+    id: "distant_tree_3",
+    label: "distant tree 3",
+    emoji: "🌲",
+    description: "A tree used for distant background elements.",
+    component: "",
+    props: {},
+    windAffected: true,
+    windNode: "pine_leaves",
+    groundOffset: 0,
+    category: "tree",
+  },
+  {
+    id: "distant_tree_4",
+    label: "distant tree 4",
+    emoji: "🌲",
+    description: "A tree used for distant background elements.",
+    component: "",
+    props: {},
+    windAffected: true,
+    windNode: "pine_leaves",
+    groundOffset: 0,
+    category: "tree",
+  },
+  {
+    id: "distant_tree_5",
+    label: "distant tree 5",
+    emoji: "🌲",
+    description: "A tree used for distant background elements.",
+    component: "",
+    props: {},
+    windAffected: true,
+    windNode: "pine_leaves",
+    groundOffset: 0,
+    category: "tree",
+  },
+  {
+    id: "distant_tree_6",
+    label: "distant tree 6",
+    emoji: "🌲",
+    description: "A tree used for distant background elements.",
+    component: "",
+    props: {},
+    windAffected: true,
+    windNode: "pine_leaves",
+    groundOffset: 0,
+    category: "tree",
+  },
+];
+
+// Background tree pool — all items in 'tree' category
+const TREE_ITEMS = NATURE_ITEMS.filter((i) => i.category === "tree");
+
+// Equal weights to start — increase a value to make that tree more common
+const TREE_WEIGHTS = TREE_ITEMS.map(() => 1.0);
+
+function pickRandomTree(rand: () => number): string {
+  const totalWeight = TREE_WEIGHTS.reduce((a, b) => a + b, 0);
+  let r = rand() * totalWeight;
+  for (let i = 0; i < TREE_ITEMS.length; i++) {
+    r -= TREE_WEIGHTS[i];
+    if (r <= 0) return TREE_ITEMS[i].id;
+  }
+  return TREE_ITEMS[0].id;
+}
+
+function pickRandomDistantTree(rand: () => number): string {
+  const TREE_ITEMS = DISTANT_TREES.filter((i) => i.category === "tree");
+  const totalWeight = TREE_WEIGHTS.reduce((a, b) => a + b, 0);
+  let r = rand() * totalWeight;
+  for (let i = 0; i < TREE_ITEMS.length; i++) {
+    r -= TREE_WEIGHTS[i];
+    if (r <= 0) return TREE_ITEMS[i].id;
+  }
+  return TREE_ITEMS[0].id;
+}
+
 export default function WalkScene() {
   const path = useGridStore((s) => s.path);
+  const { pathSet, adjacentSet } = useGridStore();
   const placedNature = useGridStore((s) => s.placedNature);
 
   const { pathCurve } = usePathSpline(path);
@@ -123,8 +234,12 @@ export default function WalkScene() {
   const naturePositions = useMemo(() => {
     if (!pathCurve) return [];
 
-    const placed: { key: string; itemId: string; position: THREE.Vector3 }[] =
-      [];
+    const placed: {
+      key: string;
+      itemId: string;
+      position: THREE.Vector3;
+      scale?: number;
+    }[] = [];
     const placedPositions: THREE.Vector3[] = [];
 
     const NATURE_OFFSET = 1.0;
@@ -195,6 +310,129 @@ export default function WalkScene() {
       placed.push({ key, itemId, position: finalPos });
     });
 
+    /////////////////////////////////////////////////////
+    // Second pass — background trees in ring around path
+    // This is a more relaxed placement, allowing trees to be placed further from the path, but still avoiding overlap with existing items and ensuring a minimum distance from the path.
+    //////////////////////////////////////////////////////
+    {
+      const BG_TREE_MIN_DIST = WALK_CONFIG.pathBoundaryWidth + 13.5;
+      const BG_TREE_MAX_DIST = WALK_CONFIG.pathBoundaryWidth + 68.0;
+      const BG_TREE_MIN_SPACING = 2.5;
+      const BG_TREE_SCALE = 1.0;
+      const MAX_BACKGROUND_TREES = 180;
+      const rand = seededRandom(42);
+
+      let treeCount = 0;
+
+      for (
+        let row = 0;
+        row < GRID_CONFIG.rows && treeCount < MAX_BACKGROUND_TREES;
+        row++
+      ) {
+        for (
+          let col = 0;
+          col < GRID_CONFIG.cols && treeCount < MAX_BACKGROUND_TREES;
+          col++
+        ) {
+          const { q, r } = indexToAxial(col, row);
+          const { x, z } = axialToWorld(q, r);
+          const tilePos = new THREE.Vector3(x, 0, z);
+          const tileKey = `${q},${r}`;
+
+          // Skip path, adjacent, and already placed tiles
+          if (pathSet.has(tileKey)) continue;
+          if (adjacentSet.has(tileKey)) continue;
+          if (placedNature[tileKey]) continue;
+
+          // Find closest spline point
+          let closestDist = Infinity;
+          let closestT = 0;
+          for (let i = 0; i <= 200; i++) {
+            const t = i / 200;
+            const pt = pathCurve.getPointAt(t);
+            const d = pt.distanceTo(tilePos);
+            if (d < closestDist) {
+              closestDist = d;
+              closestT = t;
+            }
+          }
+
+          // Only place in target zone
+          if (closestDist < BG_TREE_MIN_DIST || closestDist > BG_TREE_MAX_DIST)
+            continue;
+
+          // Push slightly away from path
+          const closestPoint = pathCurve.getPointAt(closestT);
+          const pushDir = tilePos.clone().sub(closestPoint).normalize();
+          const candidatePos = tilePos.clone().addScaledVector(pushDir, 0.5);
+          candidatePos.y = 0;
+
+          // Check spacing against all placed items
+          const tooClose = placedPositions.some(
+            (p) => p.distanceTo(candidatePos) < BG_TREE_MIN_SPACING,
+          );
+          if (tooClose) continue;
+
+          // Place tree
+          const itemId = pickRandomTree(rand);
+          placedPositions.push(candidatePos.clone());
+          placed.push({
+            key: `bg_tree_${col}_${row}`,
+            itemId,
+            position: candidatePos,
+            scale: BG_TREE_SCALE,
+          });
+          treeCount++;
+        }
+      }
+    }
+
+    //Third pass — background trees in ring around origin, outside of grid bounds
+    {
+      {
+        const BG_TREE_MIN_DIST = 50; // world units from origin
+        const BG_TREE_MAX_DIST = 85; // world units from origin
+        const BG_TREE_MIN_SPACING = 3.5; // between trees
+        const BG_TREE_SCALE = 1.0;
+        const MAX_ATTEMPTS = 300; // how many random positions to try
+        const MAX_TREES = 70;
+        const rand = seededRandom(42);
+
+        let treeCount = 0;
+        let attempts = 0;
+
+        while (treeCount < MAX_TREES && attempts < MAX_ATTEMPTS) {
+          attempts++;
+
+          // Random position in the ring
+          const angle = rand() * Math.PI * 2;
+          const dist =
+            BG_TREE_MIN_DIST + rand() * (BG_TREE_MAX_DIST - BG_TREE_MIN_DIST);
+          const x = Math.cos(angle) * dist;
+          const z = Math.sin(angle) * dist;
+          const candidatePos = new THREE.Vector3(x, 0, z);
+
+          // Check spacing against all placed items
+          const tooClose = placedPositions.some(
+            (p) => p.distanceTo(candidatePos) < BG_TREE_MIN_SPACING,
+          );
+          if (tooClose) continue;
+
+          // Place tree
+          const itemId = pickRandomDistantTree(rand);
+
+          placedPositions.push(candidatePos.clone());
+          placed.push({
+            key: `bg_tree_${attempts}`,
+            itemId,
+            position: candidatePos,
+            scale: BG_TREE_SCALE,
+          });
+          treeCount++;
+        }
+      }
+    }
+
     return placed;
   }, [pathCurve, placedNature]);
 
@@ -220,11 +458,12 @@ export default function WalkScene() {
         <Grass pathCurve={pathCurve} pathWidth={WALK_CONFIG.pathRibbonWidth} />
       </Suspense>
 
-      {naturePositions.map(({ key, itemId, position }) => (
+      {naturePositions.map(({ key, itemId, position, scale }) => (
         <NatureItemFactory
           key={key}
           itemId={itemId}
           position={[position.x, 0, position.z]}
+          scale={scale}
         />
       ))}
 

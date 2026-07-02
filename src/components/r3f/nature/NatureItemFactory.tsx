@@ -15,28 +15,21 @@ import PineTree from "./PineTree";
 import FernPlant from "./FernPlant";
 import Fountain from "./Fountain";
 import GreenFlowers from "./GreenFlowers";
+import StagStatue from "./StagStatue";
+import BushWithPurpleFlowers from "./BushWithPurpleFlowers";
+import FoxStatue from "./FoxStatue";
+import DistantPine from "./DistantTree1";
+import DistantTree2 from "./DistantTree2";
+import DistantTree1 from "./DistantTree1";
+import DistantTree3 from "./DistantTree3";
+import DistantTree4 from "./DistantTree4";
+import DistantTree5 from "./DistantTree5";
+import DistantTree6 from "./DistantTree6";
 
 interface NatureItemFactoryProps {
   itemId: string;
   position: [number, number, number];
-}
-
-// Placeholder geometries for items without real components yet
-function TreePlaceholder({ position }: { position: [number, number, number] }) {
-  return (
-    <group position={position}>
-      {/* Trunk */}
-      <mesh position={[0, 1.0, 0]}>
-        <cylinderGeometry args={[0.15, 0.2, 2.0, 8]} />
-        <meshStandardMaterial color="#5c3d1e" roughness={0.9} />
-      </mesh>
-      {/* Canopy */}
-      <mesh position={[0, 2.5, 0]}>
-        <coneGeometry args={[1.0, 2.5, 8]} />
-        <meshStandardMaterial color="#2d5a1b" roughness={0.8} />
-      </mesh>
-    </group>
-  );
+  scale?: number;
 }
 
 function FlowerPlaceholder({
@@ -54,79 +47,10 @@ function FlowerPlaceholder({
   );
 }
 
-function MushroomPlaceholder({
-  position,
-}: {
-  position: [number, number, number];
-}) {
-  return (
-    <group position={position}>
-      <mesh position={[0, 0.15, 0]}>
-        <cylinderGeometry args={[0.05, 0.05, 0.3, 6]} />
-        <meshStandardMaterial color="#e8e0d0" roughness={0.8} />
-      </mesh>
-      <mesh position={[0, 0.35, 0]}>
-        <sphereGeometry args={[0.2, 8, 8]} />
-        <meshStandardMaterial color="#c0392b" roughness={0.7} />
-      </mesh>
-    </group>
-  );
-}
-
-function HayBalePlaceholder({
-  position,
-}: {
-  position: [number, number, number];
-}) {
-  return (
-    <mesh
-      position={[position[0], position[1] + 0.4, position[2]]}
-      rotation={[0, 0, Math.PI / 2]}
-    >
-      <cylinderGeometry args={[0.5, 0.5, 0.9, 12]} />
-      <meshStandardMaterial color="#c8a84b" roughness={0.9} />
-    </mesh>
-  );
-}
-
-function BoulderPlaceholder({
-  position,
-}: {
-  position: [number, number, number];
-}) {
-  return (
-    <mesh position={[position[0], position[1] + 0.3, position[2]]}>
-      <dodecahedronGeometry args={[0.5, 0]} />
-      <meshStandardMaterial color="#7a7a72" roughness={0.95} />
-    </mesh>
-  );
-}
-
-function FernPlaceholder({ position }: { position: [number, number, number] }) {
-  return (
-    <mesh position={[position[0], position[1] + 0.2, position[2]]}>
-      <sphereGeometry args={[0.4, 8, 8]} />
-      <meshStandardMaterial color="#1a5c1a" roughness={0.8} />
-    </mesh>
-  );
-}
-
-function BrookPlaceholder({
-  position,
-}: {
-  position: [number, number, number];
-}) {
-  return (
-    <mesh position={position} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[0.8, 0.8]} />
-      <meshStandardMaterial color="#2a6aad" roughness={0.1} metalness={0.3} />
-    </mesh>
-  );
-}
-
 export default function NatureItemFactory({
   itemId,
   position,
+  scale = 1,
 }: NatureItemFactoryProps) {
   switch (itemId) {
     case "bush":
@@ -146,10 +70,47 @@ export default function NatureItemFactory({
         </Suspense>
       );
     case "pine":
-      return <PineTree position={position} scale={0.5} />;
+      return <PineTree position={position} scale={scale == 1 ? 0.5 : scale} />;
+    case "distant_tree_1":
+      return (
+        <DistantTree1 position={position} scale={scale == 1 ? 0.4 : scale} />
+      );
+    case "distant_tree_2":
+      return (
+        <DistantTree2 position={position} scale={scale == 1 ? 0.8 : scale} />
+      );
+    case "distant_tree_3":
+      return (
+        <DistantTree3 position={position} scale={scale == 1 ? 0.8 : scale} />
+      );
+    case "distant_tree_4":
+      return (
+        <DistantTree4 position={position} scale={scale == 1 ? 0.8 : scale} />
+      );
+    case "distant_tree_5":
+      return (
+        <DistantTree5 position={position} scale={scale == 1 ? 0.8 : scale} />
+      );
+    case "distant_tree_6":
+      return (
+        <DistantTree6 position={position} scale={scale == 1 ? 0.8 : scale} />
+      );
     case "deciduous":
     case "willow":
-      return <WillowTree position={position} scale={0.3} />;
+      return (
+        <WillowTree position={position} scale={scale == 1 ? 0.3 : scale} />
+      );
+    case "stag_statue":
+      return <StagStatue position={position} scale={0.5} />;
+    case "fox_statue":
+      return <FoxStatue position={position} scale={0.5} />;
+    case "purple_flower_bush":
+      return (
+        <BushWithPurpleFlowers
+          position={[position[0], position[1] - 0.3, position[2]]}
+          scale={0.5}
+        />
+      );
 
     case "flowers_red":
       return <RedFlowers position={position} scale={0.5} />;
@@ -164,7 +125,7 @@ export default function NatureItemFactory({
     case "flowers_yellow":
       return <YellowFlowers position={position} scale={0.5} />;
     case "ferns":
-      return <FernPlant position={position} />;
+      return <FernPlant position={position} scale={scale} />;
     case "mushrooms":
       return <Mushrooms position={[position[0], position[1], position[2]]} />;
     case "hay_bale":

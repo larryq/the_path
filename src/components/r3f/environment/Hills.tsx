@@ -2,6 +2,7 @@ import { useMemo, useRef } from "react";
 import { useTexture } from "@react-three/drei";
 import { Suspense } from "react";
 import * as THREE from "three";
+import { seededRandom } from "../../../utils/seededRandom";
 
 // ── Hill placement config ─────────────────────────────────────────────────────
 // angle = radians around origin, dist = world units from center
@@ -9,12 +10,12 @@ import * as THREE from "three";
 // seed = controls distortion pattern (any integer)
 
 const HILLS = [
-  { angle: 0.3, dist: 95, radius: 28, seed: 1 },
-  { angle: 1.1, dist: 110, radius: 22, seed: 2 },
-  { angle: 2.0, dist: 85, radius: 35, seed: 3 },
-  { angle: 2.8, dist: 120, radius: 18, seed: 4 },
-  { angle: 4.2, dist: 90, radius: 25, seed: 5 },
-  { angle: 5.1, dist: 105, radius: 30, seed: 6 },
+  { angle: 0.3, dist: 95, radius: 18, seed: 1 },
+  { angle: 1.1, dist: 110, radius: 12, seed: 2 },
+  { angle: 2.0, dist: 85, radius: 25, seed: 3 },
+  { angle: 2.8, dist: 120, radius: 8, seed: 4 },
+  { angle: 4.2, dist: 90, radius: 15, seed: 5 },
+  { angle: 5.1, dist: 105, radius: 20, seed: 6 },
 ];
 
 // How far below ground the sphere center sits
@@ -22,19 +23,10 @@ const HILLS = [
 const BURIAL_RATIO = 0.55;
 
 // Distortion strength — how bumpy the surface is
-const DISTORTION = 0.23;
+const DISTORTION = 0.03;
 
 // Texture repeat — low since hills are far away
 const TEXTURE_REPEAT = 20;
-
-// ── Simple seeded pseudo-random ───────────────────────────────────────────────
-function seededRandom(seed: number) {
-  let s = seed;
-  return () => {
-    s = (s * 16807 + 0) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
-}
 
 // ── Single hill geometry with vertex distortion ───────────────────────────────
 function makeHillGeometry(radius: number, seed: number): THREE.BufferGeometry {

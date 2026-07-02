@@ -6,6 +6,8 @@ import { usePathSpline } from "../../../hooks/usePathSpline";
 import { useGridStore } from "../../../stores/useGridStore";
 
 export default function WalkCamera() {
+  const smoothedDeltaX = useRef(0);
+  const smoothedDeltaY = useRef(0);
   const path = useGridStore((s) => s.path);
   const { pathCurve, startPosition, startDirection } = usePathSpline(path);
 
@@ -90,9 +92,16 @@ export default function WalkCamera() {
   useFrame((state, delta) => {
     if (!pathCurve) return;
 
+    const MOUSE_SMOOTHING = 0.07; // lower = smoother, higher = more responsive
+    smoothedDeltaX.current +=
+      (mouseDeltaX.current - smoothedDeltaX.current) * MOUSE_SMOOTHING;
+    smoothedDeltaY.current +=
+      (mouseDeltaY.current - smoothedDeltaY.current) * MOUSE_SMOOTHING;
+
     // 1. Update yaw and pitch from mouse
-    yawOffset.current -= mouseDeltaX.current * WALK_CONFIG.mouseSensitivity;
-    pitchOffset.current -= mouseDeltaY.current * WALK_CONFIG.mouseSensitivity;
+    yawOffset.current -= smoothedDeltaX.current * WALK_CONFIG.mouseSensitivity;
+    pitchOffset.current -=
+      smoothedDeltaY.current * WALK_CONFIG.mouseSensitivity;
     pitchOffset.current = Math.max(
       -WALK_CONFIG.maxPitch,
       Math.min(WALK_CONFIG.maxPitch, pitchOffset.current),

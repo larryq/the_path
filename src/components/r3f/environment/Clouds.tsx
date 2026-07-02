@@ -18,7 +18,7 @@ import * as THREE from "three";
 
 const CLOUD_CONFIGS = [
   {
-    position: [-40, 35, -60] as [number, number, number],
+    position: [-40, 50, -60] as [number, number, number],
     scale: 8,
     opacity: 0.55,
     speed: 0.1,
@@ -34,7 +34,7 @@ const CLOUD_CONFIGS = [
     color: "#f4f4f2",
   },
   {
-    position: [-20, 45, -80] as [number, number, number],
+    position: [-20, 30, -80] as [number, number, number],
     scale: 3,
     opacity: 0.45,
     speed: 0.12,
@@ -42,7 +42,7 @@ const CLOUD_CONFIGS = [
     color: "#eef2ee",
   },
   {
-    position: [30, 38, 70] as [number, number, number],
+    position: [30, 41, 70] as [number, number, number],
     scale: 4,
     opacity: 0.52,
     speed: 0.09,
@@ -50,7 +50,7 @@ const CLOUD_CONFIGS = [
     color: "#f2f4f0",
   },
   {
-    position: [-70, 42, 20] as [number, number, number],
+    position: [-70, 32, 20] as [number, number, number],
     scale: 3,
     opacity: 0.48,
     speed: 0.11,
@@ -58,15 +58,15 @@ const CLOUD_CONFIGS = [
     color: "#f0f2f0",
   },
   {
-    position: [80, 36, -20] as [number, number, number],
-    scale: 7,
-    opacity: 0.58,
+    position: [80, 40, -20] as [number, number, number],
+    scale: 4,
+    opacity: 0.28,
     speed: 0.13,
     segments: 18,
     color: "#f4f2f0",
   },
   {
-    position: [-50, 50, 50] as [number, number, number],
+    position: [-50, 44, 50] as [number, number, number],
     scale: 4,
     opacity: 0.42,
     speed: 0.07,
