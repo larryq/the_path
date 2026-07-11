@@ -1,20 +1,20 @@
 import { useGLTF } from "@react-three/drei";
 import { Suspense, useRef } from "react";
 
-interface DistantTreeModel1Props {
+interface DistantTreeModel2Props {
   position: [number, number, number];
   scale?: number | [number, number, number];
   rotation?: [number, number, number];
   randomRotation?: boolean;
 }
 
-function DistantTreeModel1({
+function DistantTreeModel2({
   position,
   scale = 1,
   rotation = [0, 0, 0],
   randomRotation = true,
-}: DistantTreeModel1Props) {
-  const { scene } = useGLTF("/models/distant_tree_1.glb");
+}: DistantTreeModel2Props) {
+  const { scene } = useGLTF("/models/distant_tree_2.glb");
   const randomY = useRef(randomRotation ? Math.random() * Math.PI * 2 : 0);
 
   const finalRotation: [number, number, number] = [
@@ -29,12 +29,12 @@ function DistantTreeModel1({
   );
 }
 
-export default function DistantPine(props: DistantTreeModel1Props) {
+export default function DistantPine(props: DistantTreeModel2Props) {
   return (
     <Suspense fallback={null}>
-      <DistantTreeModel1 {...props} />
+      <DistantTreeModel2 {...props} />
     </Suspense>
   );
 }
 
-useGLTF.preload("/models/distant_tree_1.glb");
+useGLTF.preload("/models/distant_tree_2.glb");

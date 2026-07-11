@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Butterfly Preview — with Splotch Shader</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: #1a2e1f;
+        font-family: sans-serif;
+        color: #ccc;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+      canvas {
+        width: 100%;
+        flex: 1;
+        display: block;
+      }
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        padding: 14px 16px;
+        background: #111;
+        border-top: 1px solid #333;
+      }
+      .control label {
+        font-size: 13px;
+        color: #aaa;
+        display: block;
+        margin-bottom: 4px;
+      }
+      input[type="range"] {
+        width: 100%;
+      }
+      input[type="color"] {
+        width: 100%;
+        height: 30px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <div class="controls">
+      <div class="control">
+        <label>Flap speed <span id="fsVal">3.0</span></label>
+        <input type="range" id="fs" min="1" max="8" value="3" step="0.5" />
+      </div>
+      <div class="control">
+        <label>Drift <span id="daVal">1.0</span></label>
+        <input
+          type="range"
+          id="da"
+          min="0.2"
+          max="2.5"
+          value="1.0"
+          step="0.1"
+        />
+      </div>
+      <div class="control">
+        <label>Splotch scale <span id="ssVal">4.0</span></label>
+        <input type="range" id="ss" min="1" max="12" value="4" step="0.5" />
+      </div>
+      <div class="control">
+        <label>Splotch amount <span id="smVal">0.60</span></label>
+        <input type="range" id="sm" min="0" max="1" value="0.6" step="0.05" />
+      </div>
+      <div class="control">
+        <label>Wing color</label>
+        <input type="color" id="wc" value="#f5c842" />
+      </div>
+      <div class="control">
+        <label>Splotch color</label>
+        <input type="color" id="sc" value="#1a0500" />
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+      const canvas = document.getElementById("c");
+      const W = window.innerWidth;
+      const H = window.innerHeight - 80;
+
+      canvas.width = W;
+      canvas.height = H;
+
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setSize(W, H);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setClearColor(0x1a2e1f, 1);
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.Fog(0x1a2e1f, 18, 35);
+
+      const camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 100);
+      camera.position.set(0, 2, 10);
+      camera.lookAt(0, 1, 0);
+
+      scene.add(new THREE.AmbientLight(0xfff8f0, 0.7));
+      const dl = new THREE.DirectionalLight(0xfff4e6, 1.2);
+      dl.position.set(3, 8, 5);
+      scene.add(dl);
+
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(40, 40),
+        new THREE.MeshStandardMaterial({ color: 0x2d5a2d, roughness: 0.9 }),
+      );
+      ground.rotation.x = -Math.PI / 2;
+      scene.add(ground);
+
+      const vShader = `
+varying vec3 vPos;
+varying vec3 vNormal;
+void main(){
+  vPos = position;
+  vNormal = normalize(normalMatrix * normal);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+      const fShader = `
+varying vec3 vPos;
+varying vec3 vNormal;
+uniform vec3 uWingColor;
+uniform vec3 uSplotchColor;
+uniform float uSplotchScale;
+uniform float uSplotchMix;
+uniform vec3 uLightDir;
+uniform float uSide;
+
+vec2 hash2(vec2 p){
+  p = vec2(dot(p,vec2(127.1,311.7)), dot(p,vec2(269.5,183.3)));
+  return -1.0 + 2.0 * fract(sin(p) * 43758.5453);
+}
+float noise(vec2 p){
+  vec2 i = floor(p); vec2 f = fract(p);
+  vec2 u = f*f*(3.0-2.0*f);
+  return mix(
+    mix(dot(hash2(i),f), dot(hash2(i+vec2(1,0)),f-vec2(1,0)), u.x),
+    mix(dot(hash2(i+vec2(0,1)),f-vec2(0,1)), dot(hash2(i+vec2(1,1)),f-vec2(1,1)), u.x),
+    u.y
+  ) * 0.5 + 0.5;
+}
+float fbm(vec2 p){
+  float v=0.0; float a=0.5;
+  for(int i=0;i<4;i++){ v+=a*noise(p); p*=2.1; a*=0.5; }
+  return v;
+}
+void main(){
+  vec2 uv = vec2(vPos.x * uSide, vPos.y);
+  float n = fbm(uv * uSplotchScale);
+  float splotch = smoothstep(0.42, 0.62, n);
+  float dist = length(vPos.xy);
+  float border = smoothstep(0.3, 0.85, dist);
+  float pattern = clamp(splotch * 0.7 + border * 0.5, 0.0, 1.0) * uSplotchMix;
+  vec3 color = mix(uWingColor, uSplotchColor, pattern);
+  float light = 0.45 + 0.55 * abs(dot(normalize(vNormal), normalize(uLightDir)));
+  color *= light;
+  gl_FragColor = vec4(color, 1.0);
+}
+`;
+
+      const sharedU = {
+        uWingColor: { value: new THREE.Color(0xf5c842) },
+        uSplotchColor: { value: new THREE.Color(0x1a0500) },
+        uSplotchScale: { value: 4.0 },
+        uSplotchMix: { value: 0.6 },
+        uLightDir: { value: new THREE.Vector3(3, 8, 5).normalize() },
+        uSide: { value: 1.0 },
+      };
+      const sharedULeft = { ...sharedU, uSide: { value: -1.0 } };
+
+      function makeMat(side) {
+        return new THREE.ShaderMaterial({
+          uniforms: side > 0 ? sharedU : sharedULeft,
+          vertexShader: vShader,
+          fragmentShader: fShader,
+          side: THREE.DoubleSide,
+        });
+      }
+
+      function buildWing(side) {
+        const N = 32;
+        const upper = [],
+          lower = [];
+        for (let i = 0; i <= N; i++) {
+          const t = i / N,
+            mt = 1 - t;
+          upper.push([
+            3 * mt * mt * t * (side * 0.2) +
+              3 * mt * t * t * (side * 0.8) +
+              t * t * t * (side * 0.9),
+            3 * mt * mt * t * 0.3 + 3 * mt * t * t * 0.5 + t * t * t * 0.1,
+          ]);
+        }
+        for (let i = 0; i <= N; i++) {
+          const t = i / N,
+            mt = 1 - t;
+          const px0 = side * 0.9,
+            py0 = 0.1,
+            px1 = side * 0.85,
+            py1 = -0.15,
+            px2 = side * 0.5,
+            py2 = -0.3;
+          lower.push([
+            mt * mt * mt * px0 + 3 * mt * mt * t * px1 + 3 * mt * t * t * px2,
+            mt * mt * mt * py0 + 3 * mt * mt * t * py1 + 3 * mt * t * t * py2,
+          ]);
+        }
+        const outline = [...upper, ...lower];
+        const verts = [];
+        for (let i = 0; i < outline.length - 1; i++) {
+          verts.push(
+            0,
+            0,
+            0,
+            outline[i][0],
+            outline[i][1],
+            0,
+            outline[i + 1][0],
+            outline[i + 1][1],
+            0,
+          );
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(verts, 3),
+        );
+        geo.computeVertexNormals();
+        return geo;
+      }
+
+      function buildLowerWing(side) {
+        const N = 32;
+        const upper = [],
+          lower = [];
+        for (let i = 0; i <= N; i++) {
+          const t = i / N,
+            mt = 1 - t;
+          upper.push([
+            3 * mt * mt * t * (side * 0.15) +
+              3 * mt * t * t * (side * 0.55) +
+              t * t * t * (side * 0.5),
+            3 * mt * mt * t * -0.1 + 3 * mt * t * t * -0.45 + t * t * t * -0.6,
+          ]);
+        }
+        for (let i = 0; i <= N; i++) {
+          const t = i / N,
+            mt = 1 - t;
+          const px0 = side * 0.5,
+            py0 = -0.6,
+            px1 = side * 0.35,
+            py1 = -0.65,
+            px2 = side * 0.1,
+            py2 = -0.35;
+          lower.push([
+            mt * mt * mt * px0 + 3 * mt * mt * t * px1 + 3 * mt * t * t * px2,
+            mt * mt * mt * py0 + 3 * mt * mt * t * py1 + 3 * mt * t * t * py2,
+          ]);
+        }
+        const outline = [...upper, ...lower];
+        const verts = [];
+        for (let i = 0; i < outline.length - 1; i++) {
+          verts.push(
+            0,
+            0,
+            0,
+            outline[i][0],
+            outline[i][1],
+            0,
+            outline[i + 1][0],
+            outline[i + 1][1],
+            0,
+          );
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(verts, 3),
+        );
+        geo.computeVertexNormals();
+        return geo;
+      }
+
+      let flapSpeed = 3.0,
+        driftAmount = 1.0;
+
+      class Butterfly {
+        constructor(index) {
+          this.group = new THREE.Group();
+          this.phase = index * 1.37 + Math.random() * Math.PI * 2;
+          this.orbitRadius = 2.5 + Math.random() * 3.5;
+          this.orbitSpeed = 0.15 + Math.random() * 0.25;
+          this.orbitAngle = Math.random() * Math.PI * 2;
+          this.height = 1.0 + Math.random() * 2.5;
+          this.bobSpeed = 0.8 + Math.random() * 0.6;
+          this.bobPhase = Math.random() * Math.PI * 2;
+          this.driftX = (Math.random() - 0.5) * 3;
+          this.driftZ = (Math.random() - 0.5) * 3;
+          this.driftSpeed = 0.3 + Math.random() * 0.4;
+          this.driftPhase = Math.random() * Math.PI * 2;
+
+          this.leftGroup = new THREE.Group();
+          this.rightGroup = new THREE.Group();
+
+          this.leftGroup.add(new THREE.Mesh(buildWing(-1), makeMat(-1)));
+          this.leftGroup.add(new THREE.Mesh(buildLowerWing(-1), makeMat(-1)));
+          this.rightGroup.add(new THREE.Mesh(buildWing(1), makeMat(1)));
+          this.rightGroup.add(new THREE.Mesh(buildLowerWing(1), makeMat(1)));
+
+          const bodyMat = new THREE.MeshStandardMaterial({
+            color: 0x1a1a10,
+            roughness: 0.8,
+          });
+          const body = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.02, 0.03, 0.45, 6),
+            bodyMat,
+          );
+          body.rotation.z = Math.PI / 2;
+
+          const antMat = new THREE.LineBasicMaterial({ color: 0x333320 });
+          const makeAnt = (s) => {
+            const pts = [
+              new THREE.Vector3(0, 0, 0),
+              new THREE.Vector3(s * 0.08, 0.18, 0),
+              new THREE.Vector3(s * 0.12, 0.22, 0),
+            ];
+            return new THREE.Line(
+              new THREE.BufferGeometry().setFromPoints(pts),
+              antMat,
+            );
+          };
+
+          this.group.add(
+            this.leftGroup,
+            this.rightGroup,
+            //body,
+            makeAnt(-1),
+            makeAnt(1),
+          );
+          //this.group.rotation.z = THREE.MathUtils.degToRad(60);
+          this.group.rotation.x = THREE.MathUtils.degToRad(90);
+          this.group.scale.setScalar(0.38);
+          scene.add(this.group);
+        }
+
+        update(t) {
+          const rawFlap = Math.sin(t * flapSpeed + this.phase); // -1 to +1
+          // Remap: up stroke goes to 0.55, down stroke only goes to -0.1
+          const flap =
+            rawFlap > 0
+              ? rawFlap * 0.6 // upstroke — full range
+              : rawFlap * 0.15; // downstroke — barely below horizontal
+
+          //const flap = Math.sin(t * flapSpeed + this.phase) * 0.55;
+          const dih = Math.abs(Math.sin(t * flapSpeed + this.phase)) * 0.3;
+          this.leftGroup.rotation.y = flap;
+          this.rightGroup.rotation.y = -flap;
+          this.leftGroup.rotation.z = dih;
+          this.rightGroup.rotation.z = -dih;
+          const ox =
+            Math.cos(this.orbitAngle + t * this.orbitSpeed) * this.orbitRadius;
+          const oz =
+            Math.sin(this.orbitAngle + t * this.orbitSpeed) * this.orbitRadius;
+          const wx =
+            Math.sin(t * this.driftSpeed + this.driftPhase) * 1.2 * driftAmount;
+          const wz =
+            Math.cos(t * this.driftSpeed * 0.7 + this.driftPhase) * driftAmount;
+          this.group.position.set(
+            ox + wx + this.driftX * driftAmount,
+            this.height + Math.sin(t * this.bobSpeed + this.bobPhase) * 0.25,
+            oz + wz + this.driftZ * driftAmount,
+          );
+          const nx =
+            -Math.sin(this.orbitAngle + t * this.orbitSpeed) * this.orbitSpeed;
+          const nz =
+            Math.cos(this.orbitAngle + t * this.orbitSpeed) * this.orbitSpeed;
+          if (Math.abs(nx) + Math.abs(nz) > 0.001) {
+            //  this.group.rotation.y = Math.atan2(nx, nz);
+            this.group.rotation.y = Math.atan2(nx, nz) + Math.PI;
+          }
+        }
+      }
+
+      const butterflies = Array.from({ length: 7 }, (_, i) => new Butterfly(i));
+
+      function hexToColor(h) {
+        return new THREE.Color(parseInt(h.slice(1), 16));
+      }
+
+      const syncBoth = (key, val) => {
+        sharedU[key].value = val;
+        sharedULeft[key].value = val;
+      };
+
+      document.getElementById("fs").addEventListener("input", (e) => {
+        flapSpeed = parseFloat(e.target.value);
+        document.getElementById("fsVal").textContent = flapSpeed.toFixed(1);
+      });
+      document.getElementById("da").addEventListener("input", (e) => {
+        driftAmount = parseFloat(e.target.value);
+        document.getElementById("daVal").textContent = driftAmount.toFixed(1);
+      });
+      document.getElementById("ss").addEventListener("input", (e) => {
+        syncBoth("uSplotchScale", parseFloat(e.target.value));
+        document.getElementById("ssVal").textContent = parseFloat(
+          e.target.value,
+        ).toFixed(1);
+      });
+      document.getElementById("sm").addEventListener("input", (e) => {
+        syncBoth("uSplotchMix", parseFloat(e.target.value));
+        document.getElementById("smVal").textContent = parseFloat(
+          e.target.value,
+        ).toFixed(2);
+      });
+      document.getElementById("wc").addEventListener("input", (e) => {
+        syncBoth("uWingColor", hexToColor(e.target.value));
+      });
+      document.getElementById("sc").addEventListener("input", (e) => {
+        syncBoth("uSplotchColor", hexToColor(e.target.value));
+      });
+
+      window.addEventListener("resize", () => {
+        const w = window.innerWidth;
+        const h = window.innerHeight - 80;
+        renderer.setSize(w, h);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      });
+
+      const clock = new THREE.Clock();
+      function animate() {
+        requestAnimationFrame(animate);
+        butterflies.forEach((b) => b.update(clock.getElapsedTime()));
+        renderer.render(scene, camera);
+      }
+      animate();
+    </script>
+  </body>
+</html>

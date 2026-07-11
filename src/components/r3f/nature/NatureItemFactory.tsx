@@ -113,17 +113,21 @@ export default function NatureItemFactory({
       );
 
     case "flowers_red":
-      return <RedFlowers position={position} scale={0.5} />;
+      return (
+        <RedFlowers position={position} scale={scale == 1 ? 0.5 : scale} />
+      );
     case "flowers_blue":
-      return <PurpleFlowers position={position} />;
+      return <PurpleFlowers position={position} scale={scale} />;
     case "flowers_green":
       return (
         <Suspense fallback={null}>
-          <GreenFlowers position={position} scale={0.29} />
+          <GreenFlowers position={position} scale={scale == 1 ? 0.29 : scale} />
         </Suspense>
       );
     case "flowers_yellow":
-      return <YellowFlowers position={position} scale={0.5} />;
+      return (
+        <YellowFlowers position={position} scale={scale == 1 ? 0.5 : scale} />
+      );
     case "ferns":
       return <FernPlant position={position} scale={scale} />;
     case "mushrooms":

@@ -2,6 +2,7 @@ import { Suspense, useMemo } from "react";
 import { WALK_CONFIG } from "../../../config/walk.config";
 import { usePathSpline } from "../../../hooks/usePathSpline";
 import { useGridStore } from "../../../stores/useGridStore";
+import Butterflies from "../environment/Butterflies";
 import * as THREE from "three";
 import Grass from "../environment/Grass";
 
@@ -127,6 +128,7 @@ function pickRandomDistantTree(rand: () => number): string {
 export default function WalkScene() {
   const path = useGridStore((s) => s.path);
   const { pathSet, adjacentSet } = useGridStore();
+  const adjacentTiles = useGridStore((s) => s.adjacentTiles);
   const placedNature = useGridStore((s) => s.placedNature);
 
   const { pathCurve } = usePathSpline(path);
@@ -310,6 +312,36 @@ export default function WalkScene() {
       placed.push({ key, itemId, position: finalPos });
     });
 
+    // Fallback pass — fill any remaining empty adjacent tiles with small flowers
+    //const flowerIds = ["flowers_red", "flowers_blue", "flowers_green"];
+
+    adjacentTiles.forEach(({ q, r }) => {
+      const tileKey = `${q},${r}`;
+
+      // Only fill tiles where user assigned something but placement failed
+      if (!placedNature[tileKey]) return; // user assigned nothing — skip
+      if (placed.some((p) => p.key === tileKey)) return; // placement succeeded — skip
+
+      // Placement failed — put a small flower at tile center
+      const { x, z } = axialToWorld(q, r);
+      const tilePos = new THREE.Vector3(x, 0, z);
+
+      const flowerIds = ["flowers_red", "flowers_blue", "flowers_green"];
+      const rand = seededRandom(Math.abs(q * 100 + r));
+      console.log(
+        "Fallback flower placement random value: ",
+        Math.floor(rand() * flowerIds.length),
+      );
+      const flowerId = flowerIds[Math.floor(rand() * flowerIds.length)];
+      placedPositions.push(tilePos.clone());
+      placed.push({
+        key: `fallback_${tileKey}`,
+        itemId: flowerId,
+        position: tilePos,
+        scale: 0.24,
+      });
+    });
+
     /////////////////////////////////////////////////////
     // Second pass — background trees in ring around path
     // This is a more relaxed placement, allowing trees to be placed further from the path, but still avoiding overlap with existing items and ensuring a minimum distance from the path.
@@ -434,22 +466,10 @@ export default function WalkScene() {
     }
 
     return placed;
-  }, [pathCurve, placedNature]);
+  }, [pathCurve, placedNature, adjacentTiles, pathSet, adjacentSet]);
 
   return (
     <>
-      {/* <Bush position={[0, 0.5, 0.0]} radius={0.5} /> */}
-      {/* Ground plane */}
-      {/* <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -0.05, 0]}
-        receiveShadow
-        renderOrder={1}
-      >
-        <planeGeometry args={[400, 400]} />
-
-        <meshStandardMaterial color="green" roughness={0.9} depthWrite={true} />
-      </mesh> */}
       <Suspense fallback={null}>
         <GroundPlane />
       </Suspense>
@@ -467,19 +487,17 @@ export default function WalkScene() {
         />
       ))}
 
-      {/* Path ribbon */}
-      {/* {ribbonGeometry && (
-        <mesh geometry={ribbonGeometry} receiveShadow>
-          <meshStandardMaterial color="#7a5c3a" roughness={0.8} />
-        </mesh>
-      )} */}
-
       <Suspense fallback={null}>
         <PathRibbon1 geometry={ribbonGeometry} />
       </Suspense>
       <Birds />
       <Clouds />
       <Hills />
+      <Butterflies
+        pathCurve={pathCurve}
+        pathLength={path.length}
+        scale={0.18}
+      />
     </>
   );
 }
