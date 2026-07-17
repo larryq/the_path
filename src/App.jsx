@@ -17,6 +17,7 @@ import BuildHUD from "./components/ui/BuildHUD";
 import NatureDialog from "./components/ui/NatureDialog";
 import Scene from "./components/r3f/Scene";
 import { useIsMobile } from "./hooks/useIsMobile";
+import WalkHUD from "./components/ui/WalkHUD";
 
 export default function App() {
   const phase = useAppStore((s) => s.phase);
@@ -38,6 +39,8 @@ export default function App() {
       {showScene && <Scene isMobile={isMobile} />}
       {phase === "build" && <BuildHUD />}
       {phase === "build" && <NatureDialog />}
+
+      {phase === "walk" && <WalkHUD />}
       <IntroScreen />
     </div>
   );

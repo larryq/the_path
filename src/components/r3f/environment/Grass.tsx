@@ -5,6 +5,11 @@ import { TextureLoader } from "three";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { WALK_CONFIG } from "../../../config/walk.config";
+import {
+  TERRAIN_HILL_HEIGHT,
+  TERRAIN_NOISE_SCALE,
+  TERRAIN_SAFE_MARGIN,
+} from "../../../utils/terrainHeight";
 
 const NUM_GRASS = 428 * 1024;
 const GRASS_SEGMENTS = 6;
@@ -16,11 +21,13 @@ const GRASS_HEIGHT = 0.45;
 interface GrassProps {
   pathCurve?: THREE.CatmullRomCurve3 | null;
   pathWidth?: number | 0;
+  tileDataTexture?: THREE.CanvasTexture | null;
 }
 
 export default function Grass({
   pathCurve,
   pathWidth = WALK_CONFIG.pathRibbonWidth,
+  tileDataTexture,
 }: GrassProps) {
   // pathCurve and pathWidth ignored for now, used later for tileDataTexture
 
@@ -136,6 +143,10 @@ export default function Grass({
       grassDiffuse: { value: null as THREE.DataArrayTexture | null },
       time: { value: 0 },
       resolution: { value: new THREE.Vector2(1, 1) },
+      uHillHeight: { value: TERRAIN_HILL_HEIGHT },
+      uNoiseScale: { value: TERRAIN_NOISE_SCALE },
+      uSafeMargin: { value: TERRAIN_SAFE_MARGIN },
+      uPatchSize: { value: GRASS_PATCH_SIZE },
     }),
     [],
   );
@@ -181,68 +192,17 @@ export default function Grass({
     }
   });
 
-  const pathAlphaTexture = useMemo(() => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    if (pathCurve) {
-      const points = pathCurve.getPoints(200);
-      ctx.beginPath();
-      points.forEach((point, index) => {
-        const x = (point.x / GRASS_PATCH_SIZE + 0.5) * canvas.width;
-        const y = (point.z / GRASS_PATCH_SIZE + 0.5) * canvas.height;
-        if (index === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = ((pathWidth * 2) / GRASS_PATCH_SIZE) * canvas.width;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.filter = "blur(8px)";
-      ctx.stroke();
-
-      // ctx.fillStyle = "#ffffff";
-      // ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // // Draw a black horizontal bar across the middle
-      // ctx.fillStyle = "#000000";
-      // ctx.fillRect(0, canvas.height / 2 - 10, canvas.width, 20);
-
-      // // Draw a black vertical bar down the middle
-      // ctx.fillStyle = "#000000";
-      // ctx.fillRect(canvas.width / 2 - 10, 0, 20, canvas.height);
-
-      ctx.filter = "none";
-    }
-
-    const texture = new THREE.CanvasTexture(canvas);
-    console.log("flipY:", texture.flipY);
-    const link = document.createElement("a");
-    link.download = "grass-mask.png";
-    link.href = canvas.toDataURL("image/png");
-    //link.click();
-
-    return texture;
-  }, [pathCurve, pathWidth]);
-
   useEffect(() => {
-    if (pathAlphaTexture) {
-      uniforms.tileDataTexture.value = pathAlphaTexture;
-      console.log("tileDataTexture set:", pathAlphaTexture);
+    if (tileDataTexture) {
+      uniforms.tileDataTexture.value = tileDataTexture;
     }
-  }, [pathAlphaTexture, uniforms]);
+  }, [tileDataTexture, uniforms]);
 
   return (
     <mesh
       geometry={grassGeometry}
       material={grassMaterial}
-      position={[0, 2.8, 0]}
+      position={[0, 0, 0]}
       renderOrder={0}
       frustumCulled={false}
       ref={grassRef}

@@ -2,6 +2,10 @@
 uniform vec4 grassParams;
 uniform float time;
 uniform sampler2D tileDataTexture;
+uniform float uHillHeight;
+uniform float uNoiseScale;
+uniform float uSafeMargin;
+uniform float uPatchSize;
 
 varying vec3 vColour;
 varying vec4 vGrassData;
@@ -121,10 +125,50 @@ float noise( in vec3 p )
                         dot( hash( i + vec3(1.0,1.0,1.0) ), f - vec3(1.0,1.0,1.0) ), u.x), u.y), u.z );
 }
 
-vec3 terrainHeight(vec3 worldPos) {
-  return vec3(worldPos.x, -3.15, worldPos.z);
+vec2 hash2(vec2 p) {
+  float sx = sin(p.x * 127.1 + p.y * 311.7) * 43758.5453123;
+  float sy = sin(p.x * 269.5 + p.y * 183.3) * 43758.5453123;
+  return vec2(sx - floor(sx), sy - floor(sy));
 }
 
+float noise2D(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  vec2 g00 = hash2(i + vec2(0,0));
+  vec2 g10 = hash2(i + vec2(1,0));
+  vec2 g01 = hash2(i + vec2(0,1));
+  vec2 g11 = hash2(i + vec2(1,1));
+  float a = dot(g00, f - vec2(0,0));
+  float b = dot(g10, f - vec2(1,0));
+  float c = dot(g01, f - vec2(0,1));
+  float d = dot(g11, f - vec2(1,1));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+float fbm(vec2 p) {
+  float value = 0.0;
+  float amplitude = 0.5;
+  for (int i = 0; i < 4; i++) {
+    value += amplitude * noise2D(p);
+    p *= 2.1;
+    amplitude *= 0.5;
+  }
+  return value;
+}
+
+vec3 terrainHeight(vec3 worldPos) {
+  // Sample path mask
+  vec2 maskUV = vec2(
+    worldPos.x / uPatchSize + 0.5,
+    1.0 - (worldPos.z / uPatchSize + 0.5)
+  );
+  float mask = texture2D(tileDataTexture, maskUV).r;
+  float safeMask = smoothstep(uSafeMargin, 1.0, mask);
+
+  float elevation = fbm(worldPos.xz * uNoiseScale) * uHillHeight * safeMask;
+  return vec3(worldPos.x, elevation, worldPos.z);
+}
 const vec3 BASE_COLOUR = vec3(0.1, 0.4, 0.04);
 const vec3 TIP_COLOUR = vec3(0.5, 0.7, 0.3);
 
@@ -150,14 +194,6 @@ void main() {
   const float PI = 3.14159;
   float angle = remap(hashVal.x, -1.0, 1.0, -PI, PI);
 
-/*   vec4 tileData = texture2D(
-      tileDataTexture,
-      vec2(-grassBladeWorldPos.x, grassBladeWorldPos.z) / GRASS_PATCH_SIZE * 0.5 + 0.5);
- */
- //vec2 maskUV = vec2(-grassBladeWorldPos.x, grassBladeWorldPos.z) / GRASS_PATCH_SIZE * 0.5 + 0.5;
-
-// vec2 maskUV = vec2(-grassOffset.x, grassOffset.z) / GRASS_PATCH_SIZE * 0.5 + 0.5;
-//vec2 maskUV = vec2(grassBladeWorldPos.x, grassBladeWorldPos.z) / GRASS_PATCH_SIZE + 0.5;
 vec2 maskUV = vec2(
     grassBladeWorldPos.x / GRASS_PATCH_SIZE + 0.5,
     1.0 - (grassBladeWorldPos.z / GRASS_PATCH_SIZE + 0.5) //doing 1.0- because the canvas is flipped vertically via 'flipY', so we need to flip the UVs
@@ -166,11 +202,7 @@ vec4 tileData = texture2D(tileDataTexture, maskUV);
 float tileGrassHeight = tileData.r * mix(1.0, 1.5, grassType);
   // Stiffness
   float stiffness = 1.0;// - tileData.x * 0.85;
- //float tileGrassHeight = /* (1.0 - tileData.x) *   */mix(1.0, 1.5, grassType);
 
-  // Debug
-  // grassOffset = vec3(float(gl_InstanceID) * 0.5 - 8.0, 0.0, 0.0);
-  // angle = float(gl_InstanceID) * 0.2;
 
   // Figure out vertex id, > GRASS_VERTICES is other side
   int vertFB_ID = gl_VertexID % (GRASS_VERTICES * 2);
@@ -249,23 +281,12 @@ float tileGrassHeight = tileData.r * mix(1.0, 1.5, grassType);
 
   gl_Position = projectionMatrix * mvPosition;
 
-  //TEMP, debug stuff:
-// vec4 testPos = modelViewMatrix * vec4(0.0, 2.5, 0.0, 1.0);
-//gl_Position = projectionMatrix * testPos;
-
-
-
 
   gl_Position.w = tileGrassHeight < 0.25 ? 0.0 : gl_Position.w;
 
-  // vColour = grassLocalNormal;
   vColour = mix(BASE_COLOUR, TIP_COLOUR, heightPercent);
   vColour = mix(vec3(1.0, 0.0, 0.0), vColour, stiffness);
-  // vColour = vec3(viewSpaceThickenFactor);
-  // vec3 c1 = mix(BASE_COLOUR, TIP_COLOUR, heightPercent);
-  // vec3 c2 = mix(vec3(0.6, 0.6, 0.4), vec3(0.88, 0.87, 0.52), heightPercent);
-  // float noiseValue = noise(grassBladeWorldPos * 0.1);
-  // vColour = mix(c1, c2, smoothstep(-1.0, 1.0, noiseValue));
+
 
   vNormal = normalize((modelMatrix * vec4(grassLocalNormal, 0.0)).xyz);
   vWorldPosition = (modelMatrix * vec4(grassLocalPosition, 1.0)).xyz;

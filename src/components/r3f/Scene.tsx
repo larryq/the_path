@@ -7,6 +7,9 @@ import HexGrid from "./grid/HexGrid";
 import LightingRig from "./environment/LightingRig";
 import WalkScene from "./walk/WalkScene";
 import WalkCamera from "./walk/WalkCamera";
+import SkyController from "./environment/SkyController";
+// import NightSky from "./environment/NightSky";
+import NightSky from "./environment/NightSky";
 
 const BUILD_CAMERA_POSITION: [number, number, number] = [
   0,
@@ -38,15 +41,16 @@ export default function Scene({ isMobile = false }: SceneProps) {
         position: BUILD_CAMERA_POSITION,
         fov: GRID_CONFIG.cameraFov,
         near: 0.1,
-        far: 150,
+        far: 350,
       }}
       gl={{ antialias: true, logarithmicDepthBuffer: false }}
       style={{ position: "absolute", inset: 0 }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <Sky sunPosition={[100, 30, 100]} turbidity={8} rayleigh={2} />
+      <SkyController />
+      {phase === "walk" && <NightSky />}
       <LightingRig />
-      <fog attach="fog" args={["#c8e8d8", 40, 100]} />
+      <fog attach="fog" args={["#c8e8d8", 100, 150]} />
 
       {phase === "build" && <BuildPhaseContent isMobile={isMobile} />}
       {phase === "walk" && (

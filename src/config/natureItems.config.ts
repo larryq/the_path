@@ -93,7 +93,7 @@ export const NATURE_ITEMS: NatureItem[] = [
   {
     id: "flowers_yellow",
     label: "Yellow Flowers",
-    emoji: "�",
+    emoji: "🌼",
     description: "Bright and cheerful yellow blooms.",
     component: "FlowerPatch",
     props: { color: "yellow" },

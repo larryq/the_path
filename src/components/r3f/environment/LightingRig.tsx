@@ -14,6 +14,7 @@ export default function LightingRig() {
   const fillRef = useRef<THREE.DirectionalLight>(null);
   const ambientRef = useRef<THREE.AmbientLight>(null);
   const rimRef = useRef<THREE.DirectionalLight>(null);
+  const moonRef = useRef<THREE.DirectionalLight>(null);
 
   const colorA = useRef(new THREE.Color());
   const colorB = useRef(new THREE.Color());
@@ -70,6 +71,17 @@ export default function LightingRig() {
     colorB.current.setHex(curr.rim.color);
     rimRef.current.color.lerpColors(colorA.current, colorB.current, t);
     rimRef.current.intensity = lerp(prev.rim.intensity, curr.rim.intensity, t);
+
+    if (moonRef.current) {
+      colorA.current.setHex(prev.moon.color);
+      colorB.current.setHex(curr.moon.color);
+      moonRef.current.color.lerpColors(colorA.current, colorB.current, t);
+      moonRef.current.intensity = lerp(
+        prev.moon.intensity,
+        curr.moon.intensity,
+        t,
+      );
+    }
   });
 
   const d = LIGHTING_PRESETS.day;
@@ -102,6 +114,12 @@ export default function LightingRig() {
         color={d.rim.color}
         intensity={d.rim.intensity}
         position={d.rim.position}
+      />
+      <directionalLight
+        ref={moonRef}
+        color={0x000000}
+        intensity={0.0}
+        position={[10, 15, -8]}
       />
     </>
   );

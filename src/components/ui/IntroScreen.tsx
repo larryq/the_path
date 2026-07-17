@@ -70,10 +70,14 @@ export default function IntroScreen() {
         </div>
 
         <div
-          className="text-xs tracking-wide"
-          style={{ color: "#4a6a5a", fontFamily: "'Raleway', sans-serif" }}
+          className="text-med tracking-wide"
+          style={{
+            color: "#4a6a5a",
+            fontFamily: "'Raleway', sans-serif",
+          }}
         >
-          Touch &amp; drag on mobile · WASD or arrow keys to walk
+          Touch &amp; drag on mobile · WASD or arrow keys to walk, mouse to look
+          around
         </div>
 
         <button
